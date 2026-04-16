@@ -1,0 +1,54 @@
+{
+  "questions": [
+    {
+      "id": "q-1",
+      "content": "If $x + 3 = 7$, then $x = $ <span class=\"blank\" data-blank-id=\"0\">[blank_0]</span>.",
+      "blanks": [
+        {
+          "id": "0",
+          "answers": ["4"]
+        }
+      ],
+      "caption": "Solve for x",
+      "explanation": "Subtract 3 from both sides to get $x = 4$.",
+      "status": "DRAFT",
+      "updatedAt": "2026-04-15T00:00:00.000Z"
+    },
+    {
+      "id": "q-2",
+      "content": "The derivative of $x^2$ is <span class=\"blank\" data-blank-id=\"0\">[blank_0]</span>, and the derivative of $\\sin(x)$ is <span class=\"blank\" data-blank-id=\"1\">[blank_1]</span>.",
+      "blanks": [
+        {
+          "id": "0",
+          "answers": ["2x"]
+        },
+        {
+          "id": "1",
+          "answers": ["cos(x)", "\\cos(x)"]
+        }
+      ],
+      "caption": "Basic derivatives",
+      "explanation": "Power rule and standard trig derivatives.",
+      "status": "PUBLISHED",
+      "updatedAt": "2026-04-15T00:00:00.000Z"
+    },
+    {
+      "content": "$4 + 5 + 10 =$ <span class=\"blank\" data-blank-id=\"0\">[blank_0]</span> $+ 10 =$ <span class=\"blank\" data-blank-id=\"1\">[blank_1]</span>",
+      "blanks": [
+        {
+          "id": "0",
+          "answers": ["9"]
+        },
+        {
+          "id": "1",
+          "answers": ["19"]
+        }
+      ],
+      "caption": "Amallarni bajaring",
+      "explanation": "Yana qaytadan urinib ko'ring!",
+      "status": "DRAFT",
+      "id": "q-1776228793611",
+      "updatedAt": "2026-04-15T04:53:13.611Z"
+    }
+  ]
+}
