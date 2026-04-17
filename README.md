@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Question Type Builder
 
-## Getting Started
+Frontend-only authoring tool for **Math Fill-in-the-Blank (Cloze Text)** questions. Authors create/edit questions with inline math and blank placeholders, and preview them as a learner would. Drafts persist in the browser.
 
-First, run the development server:
+## Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+yarn install
+yarn dev             # http://localhost:3000
+yarn build           # production build
+yarn format          # prettier formatter
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Requires Node 18.18+ (Next.js 16).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Third-Party Packages
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Dependencies
 
-## Learn More
+| Package | Version | Purpose |
+| --- | --- | --- |
+| `zustand` | ^5.0.12 | Lightweight state store with `persist` middleware for `localStorage` draft persistence |
+| `react-hook-form` | ^7.72.1 | Performant form state management for the question editor |
+| `@hookform/resolvers` | ^5.2.2 | Connects Zod schemas to React Hook Form for declarative validation |
+| `zod` | ^4.3.6 | Schema validation — enforces blank-answer alignment and required fields |
+| `katex` | ^0.16.45 | Fast inline math rendering (`$...$` LaTeX expressions) |
+| `html-react-parser` | ^6.0.1 | Parses `content` HTML into React elements, enabling swap of `<span class="blank">` for interactive `<BlankInput>` components |
 
-To learn more about Next.js, take a look at the following resources:
+### Dev Dependencies
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Package | Version | Purpose |
+| --- | --- | --- |
+| `tailwindcss` | ^4 | Utility-first CSS framework (v4) |
+| `@tailwindcss/postcss` | ^4 | PostCSS plugin for Tailwind |
+| `typescript` | ^5 | Static type checking |
+| `eslint` / `eslint-config-next` | ^9 / 16.2.3 | Linting with Next.js-specific rules |
+| `eslint-config-prettier` | ^10.1.8 | Disables ESLint rules that conflict with Prettier |
+| `prettier` | ^3.8.3 | Code formatting |
+| `@types/katex` | ^0.16.8 | TypeScript definitions for KaTeX |
+| `@types/node` / `@types/react` / `@types/react-dom` | ^20 / ^19 / ^19 | TypeScript definitions for Node.js and React |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Metadata
 
-## Deploy on Vercel
+Next.js Metadata API is used across the app for SEO and page titles.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| File | Type | Details |
+| --- | --- | --- |
+| `app/layout.tsx` | Static | `title.default`: "Question Type Builder", `title.template`: "%s · Question Type Builder", `description`: "Math Fill-in-the-Blank (Cloze Text) authoring tool" |
+| `app/page.tsx` | Static | `title`: "All questions" |
+| `app/not-found.tsx` | Static | `title`: "Page not found" |
+| `app/questions/new/page.tsx` | Static | `title`: "New question" |
+| `app/questions/[id]/page.tsx` | Dynamic (`generateMetadata`) | Title is computed from the route params and search params — e.g. "Edit \| abc123" or "Preview \| abc123" |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The root layout sets a **template** (`%s · Question Type Builder`) so nested pages only need to provide their own title segment.
+
+## How it works
+
+- Question list at `/` → pick **Edit** or **Preview**.
+- Question page at `/questions/[id]?mode=edit|preview` — tab toggle is a query param, so it's deep-linkable and survives refresh.
+- Edit view has a live preview pane, validates that blank placeholders ↔ answer entries align, and gates `PUBLISHED` on a clean state.
+- Preview view renders each `<span class="blank" data-blank-id="N">` as an `<input>`, captures learner responses in a session-scoped Zustand store, and reveals correct/incorrect feedback on **Check answers**.
+- Questions (authoritative) persist to `localStorage` under `qtb:questions:v1`. Learner responses are session-only.
+
+## Known limitations
+
+- Answer checking is trimmed/case-insensitive string equality; no math-expression equivalence (`2x` ≠ `x*2`).
+- No tests included in this pass.
