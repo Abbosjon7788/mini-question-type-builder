@@ -27,7 +27,7 @@ export default function QuestionPage({ params }: { params: Params }) {
 
   return (
     <Fragment>
-      <h1 className="text-lg font-semibold sm:text-2xl font-mono text-white mb-4">
+      <h1 className="text-lg font-semibold sm:text-2xl font-mono tracking-tight mb-4">
         Problem: #{numericId}
       </h1>
       <QuestionDetailsView id={numericId} />
