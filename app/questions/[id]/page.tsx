@@ -23,13 +23,14 @@ export async function generateMetadata({
 
 export default function QuestionPage({ params }: { params: Params }) {
   const { id } = use(params);
+  const numericId = Number(id);
 
   return (
     <Fragment>
       <h1 className="text-lg font-semibold sm:text-2xl font-mono text-white mb-4">
-        Question: {id}
+        Problem: #{numericId}
       </h1>
-      <QuestionDetailsView id={id} />
+      <QuestionDetailsView id={numericId} />
     </Fragment>
   );
 }

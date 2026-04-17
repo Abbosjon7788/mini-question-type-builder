@@ -3,7 +3,7 @@
 import { useEffect, Fragment } from "react";
 import { useQuestionsStore } from "@/lib/store/questions";
 
-export function HydrationGate({ children }: { children: React.ReactNode }) {
+export function HydrationProvider({ children }: { children: React.ReactNode }) {
   const hydrated = useQuestionsStore((s) => s.hydrated);
 
   useEffect(() => {

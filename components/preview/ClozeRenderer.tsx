@@ -3,64 +3,113 @@
 import { parseDocument } from "htmlparser2";
 import { Element, Text, type Node } from "domhandler";
 import type { ReactNode } from "react";
-import type { Question } from "@/lib/schema";
+import type { Problem, Style } from "@/lib/schema";
 import { BlankInput } from "./BlankInput";
-import { MathInline } from "./MathInline";
-import { splitMath } from "@/helpers";
+import { Math } from "./Math";
+import { getAnswersForBlank } from "@/helpers";
 
 interface Props {
-  question: Question;
+  problem: Problem;
+  styles?: Style[];
   showFeedback?: boolean;
 }
 
-function renderText(text: string, key: string): ReactNode {
-  const parts = splitMath(text);
+function getStyleValue(styles: Style[] | undefined, key: string): string | undefined {
+  return styles?.find((s) => s.key === key)?.value;
+}
 
-  return (
-    <span key={key}>
-      {parts.map((p, i) =>
-        p.type === "math" ? (
-          <MathInline key={`${key}-${i}`} tex={p.value} />
-        ) : (
-          <span key={`${key}-${i}`}>{p.value}</span>
-        ),
-      )}
-    </span>
-  );
+/**
+ * source: https://developer.mozilla.org/en-US/docs/Web/MathML/Reference/Element
+ */
+const MATHML_TAGS = new Set([
+  "math",
+  "mi",
+  "mn",
+  "mo",
+  "ms",
+  "mtext",
+  "mspace",
+  "mrow",
+  "mfrac",
+  "msqrt",
+  "mroot",
+  "mstyle",
+  "merror",
+  "mpadded",
+  "mphantom",
+  "mfenced",
+  "menclose",
+  "msub",
+  "msup",
+  "msubsup",
+  "munder",
+  "mover",
+  "munderover",
+  "mmultiscripts",
+  "mtable",
+  "mtr",
+  "mtd",
+  "maction",
+  "annotation",
+  "annotation-xml",
+  "semantics",
+]);
+
+function serializeMathML(node: Node): string {
+  if (node instanceof Text) return node.data;
+  if (!(node instanceof Element)) return "";
+  const attrs = Object.entries(node.attribs ?? {})
+    .map(([k, v]) => ` ${k}="${String(v).replace(/"/g, "&quot;")}"`)
+    .join("");
+  const inner = (node.children as Node[]).map(serializeMathML).join("");
+  return `<${node.name}${attrs}>${inner}</${node.name}>`;
 }
 
 function renderNodes(
   nodes: Node[],
-  question: Question,
+  problem: Problem,
+  styles: Style[] | undefined,
   showFeedback: boolean | undefined,
-  blanksById: Map<string, Question["blanks"][number]>,
   keyPrefix: string,
 ): ReactNode[] {
   return nodes.map((node, i) => {
     const key = `${keyPrefix}-${i}`;
 
     if (node instanceof Text) {
-      return renderText(node.data, key);
+      return <span key={key}>{node.data}</span>;
     }
 
     if (node instanceof Element) {
+      // MathML subtree — serialize back to string so MathJax can typeset it natively.
+      if (MATHML_TAGS.has(node.name)) {
+        const xml = serializeMathML(node);
+        return <span key={key} dangerouslySetInnerHTML={{ __html: xml }} />;
+      }
+
       const cls = node.attribs?.class ?? "";
       if (cls.split(/\s+/).includes("blank")) {
         const blankId = node.attribs["data-blank-id"] ?? "";
+        const blankAnswers = getAnswersForBlank(problem.answers, blankId);
+        const inputWidth = getStyleValue(styles, "mathInputWidth");
+        const inputHeight = getStyleValue(styles, "mathInputHeight");
+
         return (
           <BlankInput
             key={key}
-            questionId={question.id}
-            blank={blanksById.get(blankId)}
+            problemId={problem.id}
+            answers={blankAnswers}
             blankId={blankId}
             showFeedback={showFeedback}
+            width={inputWidth}
+            height={inputHeight}
           />
         );
       }
+
       const Tag = node.name as keyof React.JSX.IntrinsicElements;
       return (
         <Tag key={key}>
-          {renderNodes(node.children as Node[], question, showFeedback, blanksById, key)}
+          {renderNodes(node.children as Node[], problem, styles, showFeedback, key)}
         </Tag>
       );
     }
@@ -68,10 +117,8 @@ function renderNodes(
   });
 }
 
-export function ClozeRenderer({ question, showFeedback }: Props) {
-  const blanksById = new Map(question.blanks.map((b) => [b.id, b]));
-  const doc = parseDocument(question.content);
-
-  const nodes = renderNodes(doc.children as Node[], question, showFeedback, blanksById, "root");
-  return <div className="leading-9 text-lg text-zinc-900 dark:text-zinc-100">{nodes}</div>;
+export function ClozeRenderer({ problem, styles, showFeedback }: Props) {
+  const doc = parseDocument(problem.content, { xmlMode: false, lowerCaseTags: true });
+  const nodes = renderNodes(doc.children as Node[], problem, styles, showFeedback, "root");
+  return <Math className="leading-9 text-lg text-zinc-900 dark:text-zinc-100">{nodes}</Math>;
 }

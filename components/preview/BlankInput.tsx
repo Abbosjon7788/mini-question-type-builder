@@ -2,28 +2,26 @@
 
 import { useAttemptsStore } from "@/lib/store/attempts";
 import { isCorrect } from "@/helpers";
-import type { Blank } from "@/lib/schema";
+import type { Answer } from "@/lib/schema";
 import { useMemo } from "react";
 
 interface Props {
-  questionId: string;
-  blank: Blank | undefined;
+  problemId: number;
+  answers: Answer[];
   blankId: string;
   showFeedback?: boolean;
+  width?: string;
+  height?: string;
 }
 
-// -------------------------------------------------------------------------------------------------
-
 const base =
-  "inline-block mx-1 px-2 py-0.5 rounded-md border text-sm align-baseline min-w-20 outline-none focus:ring-2 focus:ring-offset-1 transition-colors";
+  "inline-block mx-1 px-2 py-0.5 rounded-md border text-sm align-baseline outline-none focus:ring-2 focus:ring-offset-1 transition-colors";
 
-// -------------------------------------------------------------------------------------------------
-
-export function BlankInput({ questionId, blank, blankId, showFeedback }: Props) {
-  const value = useAttemptsStore((s) => s.responses[questionId]?.[blankId] ?? "");
+export function BlankInput({ problemId, answers, blankId, showFeedback, width, height }: Props) {
+  const value = useAttemptsStore((s) => s.responses[problemId]?.[blankId] ?? "");
   const setResponse = useAttemptsStore((s) => s.setResponse);
 
-  const correct = blank && value ? isCorrect(value, blank.answers) : null;
+  const correct = answers.length > 0 && value ? isCorrect(value, answers) : null;
   const state = !showFeedback || !value ? "idle" : correct ? "correct" : "wrong";
 
   const palette = useMemo(() => {
@@ -34,16 +32,25 @@ export function BlankInput({ questionId, blank, blankId, showFeedback }: Props) 
         : "border-zinc-300 bg-white text-zinc-900 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100";
   }, [state]);
 
+  const inlineStyles = useMemo(() => {
+    const inlineStyle: React.CSSProperties = {};
+    if (width) inlineStyle.width = `${width}px`;
+    if (height) inlineStyle.height = `${height}px`;
+    if (!width) inlineStyle.minWidth = "5rem";
+
+    return inlineStyle;
+  }, [width, height]);
+
   return (
     <input
-      name={"math-input"}
+      name="math-input"
       type="text"
       value={value}
-      onChange={(e) => setResponse(questionId, blankId, e.target.value)}
+      onChange={(e) => setResponse(problemId, blankId, e.target.value)}
       className={`${base} ${palette}`}
+      style={inlineStyles}
       aria-label={`Answer for blank ${blankId}`}
       aria-invalid={state === "wrong"}
-      size={Math.max(6, value.length + 2)}
       autoComplete="off"
       spellCheck={false}
     />

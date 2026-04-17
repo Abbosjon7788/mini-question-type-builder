@@ -114,10 +114,10 @@ Expected behavior:
 
 1. Source code repository
 2. `README.md` with:
-    - Setup/run instructions
-    - Architecture decisions
-    - Trade-offs
-    - What you would improve with more time
+   - Setup/run instructions
+   - Architecture decisions
+   - Trade-offs
+   - What you would improve with more time
 
 ## Evaluation Criteria
 

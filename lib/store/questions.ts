@@ -2,55 +2,88 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { Question, Status } from "@/lib/schema";
+import type { Question, Problem, Status, Style } from "@/lib/schema";
 import mockData from "@/data/mock-data.json";
 
 interface QuestionsState {
-  questions: Question[];
+  question: Question;
   hydrated: boolean;
   setHydrated: (v: boolean) => void;
-  getById: (id: string) => Question | undefined;
-  update: (id: string, patch: Partial<Question>) => void;
-  setStatus: (id: string, status: Status) => void;
-  create: (q: Omit<Question, "id" | "updatedAt">) => Question;
-  remove: (id: string) => void;
+
+  // CRUD actions for math problems
+  getProblemById: (id: number) => Problem | undefined;
+  getProblems: () => Problem[];
+  getStyles: () => Style[];
+  updateProblem: (id: number, patch: Partial<Problem>) => void;
+  setProblemStatus: (id: number, status: Status) => void;
+  createProblem: (p: Omit<Problem, "id">) => Problem;
+  removeProblem: (id: number) => void;
   resetToMock: () => void;
 }
 
-const seed = (): Question[] => (mockData.questions as Question[]).map((q) => ({ ...q }));
+const seed = (): Question => ({
+  id: mockData.question.id,
+  type: mockData.question.type,
+  styles: mockData.question.styles.map((s) => ({ ...s })),
+  problems: mockData.question.problems.map((p) => ({
+    ...p,
+    status: p.status as Status,
+    answers: p.answers.map((a) => ({ ...a })),
+  })),
+});
 
 export const useQuestionsStore = create<QuestionsState>()(
   persist(
     (set, get) => ({
-      questions: seed(),
+      question: seed(),
       hydrated: false,
 
-      // methods
       setHydrated: (value) => set({ hydrated: value }),
-      getById: (id) => get().questions.find((q) => q.id === id),
-      update: (id, patch) =>
+
+      getProblemById: (id) => get().question.problems.find((p) => p.id === id),
+
+      getProblems: () => get().question.problems,
+
+      getStyles: () => get().question.styles,
+
+      updateProblem: (id, patch) =>
         set((s) => ({
-          questions: s.questions.map((q) =>
-            q.id === id ? { ...q, ...patch, updatedAt: new Date().toISOString() } : q,
-          ),
+          question: {
+            ...s.question,
+            problems: s.question.problems.map((p) => (p.id === id ? { ...p, ...patch } : p)),
+          },
         })),
-      setStatus: (id, status) =>
+
+      setProblemStatus: (id, status) =>
         set((s) => ({
-          questions: s.questions.map((q) =>
-            q.id === id ? { ...q, status, updatedAt: new Date().toISOString() } : q,
-          ),
+          question: {
+            ...s.question,
+            problems: s.question.problems.map((p) => (p.id === id ? { ...p, status } : p)),
+          },
         })),
-      create: (q) => {
-        const newQ: Question = {
-          ...q,
-          id: `q-${Date.now()}`,
-          updatedAt: new Date().toISOString(),
-        };
-        set((s) => ({ questions: [...s.questions, newQ] }));
-        return newQ;
+
+      createProblem: (p) => {
+        const existing = get().question.problems;
+        const maxId = existing.length ? Math.max(...existing.map((x) => x.id)) : 0;
+        const newProblem: Problem = { ...p, id: maxId + 1 };
+        set((s) => ({
+          question: {
+            ...s.question,
+            problems: [...s.question.problems, newProblem],
+          },
+        }));
+        return newProblem;
       },
-      remove: (id) => set((s) => ({ questions: s.questions.filter((q) => q.id !== id) })),
-      resetToMock: () => set({ questions: seed() }),
+
+      removeProblem: (id) =>
+        set((s) => ({
+          question: {
+            ...s.question,
+            problems: s.question.problems.filter((p) => p.id !== id),
+          },
+        })),
+
+      resetToMock: () => set({ question: seed() }),
     }),
     {
       name: "qtb:questions:v1",
@@ -59,6 +92,9 @@ export const useQuestionsStore = create<QuestionsState>()(
       skipHydration: true,
       onRehydrateStorage: () => (state) => {
         state?.setHydrated(true);
+      },
+      migrate: () => {
+        return { question: seed(), hydrated: false } as QuestionsState;
       },
     },
   ),

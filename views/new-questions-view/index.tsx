@@ -14,19 +14,24 @@ const FormSchema = z.object({
   caption: z.string(),
   explanation: z.string(),
   status: z.enum(["DRAFT", "PUBLISHED"]),
+  language: z.string().min(1, "Language is required"),
+  template: z.boolean(),
 });
 type FormValues = z.infer<typeof FormSchema>;
 
 const DEFAULTS: FormValues = {
-  content: 'If $x + 3 = 7$, then $x = $ <span class="blank" data-blank-id="0">[blank_0]</span>.',
+  content:
+    '<p>Solve: <math><mi>x</mi><mo>+</mo><mn>3</mn><mo>=</mo><mn>7</mn></math>. Therefore <span class="blank" data-blank-id="0">[blank_0]</span>.</p>',
   caption: "",
   explanation: "",
   status: "DRAFT",
+  language: "EN",
+  template: false,
 };
 
 export function NewQuestionForm() {
   const router = useRouter();
-  const create = useQuestionsStore((s) => s.create);
+  const createProblem = useQuestionsStore((s) => s.createProblem);
 
   const {
     register,
@@ -50,22 +55,47 @@ export function NewQuestionForm() {
 
   const onSubmit = handleSubmit((data) => {
     const blankIds = extractBlankIds(data.content);
-    const blanks = blankIds.map((id) => ({ id, answers: [""] }));
-    const created = create({
+    const answers = blankIds.map((id, idx) => ({
+      id: idx + 1,
+      order: Number(id),
+      value: "",
+      isCorrect: true,
+    }));
+    const created = createProblem({
       content: data.content,
-      blanks,
+      answers,
       caption: data.caption,
       explanation: data.explanation,
       status: data.status,
+      language: data.language,
+      template: data.template,
     });
     router.push(`/questions/${created.id}?mode=edit`);
   });
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
+      <div className="grid grid-cols-2 gap-4">
+        <label className="block">
+          <span className="text-sm font-medium">Language</span>
+          <input
+            {...register("language")}
+            className="mt-1 w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-2 text-sm"
+            placeholder="EN"
+          />
+          {errors.language && (
+            <p className="text-sm text-red-600 mt-1">{errors.language.message}</p>
+          )}
+        </label>
+        <label className="flex items-center gap-2 self-end pb-2">
+          <input type="checkbox" {...register("template")} className="rounded" />
+          <span className="text-sm font-medium">Template</span>
+        </label>
+      </div>
+
       <div>
         <label className="flex items-center justify-between text-sm font-medium mb-1">
-          <span>Statement (HTML + inline $math$)</span>
+          <span>Statement (HTML + MathML)</span>
           <Button size="sm" onClick={onInsertBlank}>
             + Insert blank
           </Button>
@@ -88,11 +118,15 @@ export function NewQuestionForm() {
       </div>
 
       <label className="block">
-        <span className="text-sm font-medium">Caption</span>
+        <span className="text-sm font-medium">Hint</span>
         <input
           {...register("caption")}
+          placeholder="Shown to the learner on demand"
           className="mt-1 w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-2"
         />
+        <span className="mt-1 block text-xs text-zinc-500">
+          Stored as <code>caption</code>. HTML tags are stripped for display.
+        </span>
       </label>
 
       <label className="block">

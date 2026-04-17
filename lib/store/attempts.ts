@@ -3,29 +3,30 @@
 import { create } from "zustand";
 
 interface AttemptsState {
-  // questionId -> blankId -> response
-  responses: Record<string, Record<string, string>>;
-  setResponse: (questionId: string, blankId: string, value: string) => void;
-  clear: (questionId: string) => void;
-  get: (questionId: string) => Record<string, string>;
+  // problemId -> blankId -> response
+  responses: Record<number, Record<string, string>>;
+  setResponse: (problemId: number, blankId: string, value: string) => void;
+  clear: (problemId: number) => void;
+  get: (problemId: number) => Record<string, string>;
 }
 
 export const useAttemptsStore = create<AttemptsState>((set, get) => ({
   responses: {},
 
-  // methods
-  setResponse: (questionId, blankId, value) =>
+  setResponse: (problemId, blankId, value) =>
     set((s) => ({
       responses: {
         ...s.responses,
-        [questionId]: { ...(s.responses[questionId] ?? {}), [blankId]: value },
+        [problemId]: { ...(s.responses[problemId] ?? {}), [blankId]: value },
       },
     })),
-  clear: (questionId) =>
+
+  clear: (problemId) =>
     set((s) => {
       const next = { ...s.responses };
-      delete next[questionId];
+      delete next[problemId];
       return { responses: next };
     }),
-  get: (questionId) => get().responses[questionId] ?? {},
+
+  get: (problemId) => get().responses[problemId] ?? {},
 }));

@@ -8,18 +8,18 @@ import { Preview } from "@/components/preview/Preview";
 import { Button, buttonClasses } from "@/components/Button";
 import { Fragment } from "react";
 
-export function QuestionDetailsView({ id }: { id: string }) {
-  const question = useQuestionsStore((s) => s.getById(id));
+export function QuestionDetailsView({ id }: { id: number }) {
+  const problem = useQuestionsStore((s) => s.getProblemById(id));
   const searchParams = useSearchParams();
   const router = useRouter();
   const mode = searchParams.get("mode") === "preview" ? "preview" : "edit";
 
-  if (!question) {
+  if (!problem) {
     return (
       <Fragment>
-        <p>Question not found.</p>
+        <p>Problem not found.</p>
         <Link href="/" className={buttonClasses({ variant: "primary" })}>
-          ← Back
+          &larr; Back
         </Link>
       </Fragment>
     );
@@ -35,7 +35,7 @@ export function QuestionDetailsView({ id }: { id: string }) {
     <Fragment>
       <nav className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <Link href="/" className="text-sm text-zinc-500 hover:underline">
-          ← All questions
+          &larr; All questions
         </Link>
         <div
           role="tablist"
@@ -60,7 +60,7 @@ export function QuestionDetailsView({ id }: { id: string }) {
         </div>
       </nav>
 
-      {mode === "edit" ? <EditForm question={question} /> : <Preview id={id} />}
+      {mode === "edit" ? <EditForm problem={problem} /> : <Preview problemId={id} />}
     </Fragment>
   );
 }
